@@ -1,17 +1,67 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <time.h>
 #include <GL/glut.h>
+#include <math.h>
+#include <time.h>
 
-static int window_width,window_height;
+static int window_width, window_height;
+
+static void initialize(void);
+
+static void on_keyboard(unsigned char key,int x,int y);
+static void on_display(void);
+static void on_reshape(int width,int window_height);
 int sirina,duzina;
-int res = 0;
 char *lav;
 
-static void on_keyboard(unsigned char key,int x ,int y);
-static void on_reshape(int width,int height);
-static void on_display(void);
+void prikaz(const char *lav,int sirina,int duzina);
+void oblikuj(char *lav,int sirina,int duzina,int x, int y);
+void generisanje(char *lav , int sirina,int duzina);
+void resenje(char *lav, int sirina, int duzina);
 
+int main(int argc,char **argv)
+{
+	glutInit(&argc,argv);
+	glutInitDisplayMode(GLUT_RGB | GLUT_DOUBLE);
+
+	glutInitWindowSize(600,600);
+	glutInitWindowPosition(100,100);
+	glutCreateWindow(argv[0]);
+
+	glutKeyboardFunc(on_keyboard);
+	glutReshapeFunc(on_reshape);
+	glutDisplayFunc(on_display);
+
+	initialize();
+	
+	duzina = 17;
+	sirina=17;
+	
+	
+	lav = (char*)malloc(sirina*duzina *sizeof(char));
+	if(lav == NULL){
+		printf("nema dovoljno memorije\n");
+		exit(EXIT_FAILURE);
+	}
+	generisanje(lav,sirina,duzina);
+	prikaz(lav,sirina,duzina);
+	printf("\n");
+	//resenje(lav,sirina,duzina);
+	glutMainLoop();
+	free(lav);
+
+	return 0;
+}
+
+static void initialize(void)
+{
+	glClearColor(0,0,0,1);
+	
+	glLineWidth(7);
+	glPointSize(2);
+
+
+}
 
 static void on_keyboard(unsigned char key,int x,int y)
 {
@@ -19,20 +69,78 @@ static void on_keyboard(unsigned char key,int x,int y)
 		case 27:
 			exit(0);
 			break;
+		//Prikazuje se putanja za prolaz kroz lavirint
+		case 'r':
+			resenje(lav,sirina,duzina);
+			prikaz(lav,sirina,duzina);
+			break;
 	}
-}	
-
+	glutPostRedisplay();
+}
 static void on_reshape(int width,int height)
 {
-	window_width = width;
-	window_height = height;
+	window_width=width;
+	window_height=height;
 	glViewport(0,0,window_width,window_height);
+	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	glFrustum(-1,1,-1,1,1,10);
-	
+	gluPerspective(40,window_width/(float)window_height,1,120);
 }
 
+static void on_display(void)
+{
+	int i;
+
+	glClear(GL_COLOR_BUFFER_BIT);
+	glMatrixMode(GL_MODELVIEW);
+	glLoadIdentity();
+	gluLookAt(
+				1,3,2,
+				0,0,0,
+				0,1,0
+			);
+	
+	
+
+	glColor3f(0.95,0,0.96);
+	glTranslatef(-0.7,-0.7,0);
+	glRotatef(20,1,0,0);
+	glRotatef(90,0,1,0);
+	
+	
+	for(i = 0;i<sirina;i++)
+		for(int j=0;j<duzina;j++)
+		{	
+			if(lav[i*sirina+j]==1){
+				glPushMatrix();
+				glTranslatef(i*0.1,0,j*0.1);
+				glutSolidCube(0.1);
+				glPopMatrix();
+			}	
+	}
+	
+	glBegin(GL_POINTS);
+	for(i = 0;i<sirina;i++)
+		for(int j=0;j<duzina;j++)
+		{	
+			glColor3f(1,1,1);
+			if(lav[i*sirina+j]==2){
+				glVertex3f(i*0.1,0,j*0.1);
+			}	
+	}
+	glEnd();
+	
+	
+
+
+
+
+
+	glutSwapBuffers();
+}
+
+//prikaz lavirinta u terminalu
 void prikaz(const char *lav,int sirina,int duzina)
 {
 	int x,y;
@@ -41,13 +149,8 @@ void prikaz(const char *lav,int sirina,int duzina)
 		for(x = 0; x<sirina; x++)
 		{
 			switch(lav[y*sirina +x]){
-				case 1: {
-				glColor4f(0,0,0, 0);
-                glPushMatrix();
-                glTranslatef(x * 2 - 2, 0, y * 2);
-                glutSolidCube(1);
-                glPopMatrix();
-            }; break;
+				case 1: printf("[]");
+				 break;
 				case 2:printf("<>"); break;
 				default: printf("  "); break;
 			}
@@ -102,7 +205,7 @@ void generisanje(char *lav , int sirina,int duzina){
 
 	srand(time(0));
 
-	/*secenje/oblikovanje*/
+	/*secenje/oblikovanje lavirinta*/
 
 	for(y = 1; y<duzina; y+=2)
 	{
@@ -121,9 +224,6 @@ void resenje(char *lav, int sirina, int duzina) {
    int dx, dy;
    int forward;
 
-   /* uklanjanje pocetka i kraja */
-   lav[0 * sirina + 1] = 1;
-   lav[(duzina - 1) * sirina + (sirina - 2)] = 1;
 
    forward = 1;
    pr = 0;
@@ -156,80 +256,7 @@ void resenje(char *lav, int sirina, int duzina) {
       }
    }
 
-   /* Replace the entry and exit. */
    lav[(duzina - 2) * sirina + (sirina - 2)] = 2;
    lav[(duzina - 1) * sirina + (sirina - 2)] = 2;
-
-}
-
-int main(int argc,char *argv[]){
-	
-
-	glutInit(&argc,argv);
-	glutInitDisplayMode(GLUT_RGB | GLUT_DEPTH | GLUT_DOUBLE);
-
-	glutInitWindowSize(1000,1000);
-	glutInitWindowPosition(100,100);
-	glutCreateWindow(argv[0]);
-
-	glutKeyboardFunc(on_keyboard);
-	glutReshapeFunc(on_reshape);
-	glutDisplayFunc(on_display);
-
-
-	glClearColor(1,0.9,1,1);
-	glEnable(GL_DEPTH_TEST);
-	glLineWidth(GL_DEPTH_TEST);
-	glLineWidth(0.5);
-
-
-	printf("Ucitajte dimenzije zeljenog lavirinta\n" );
-
-	scanf("%d",&sirina);
-	scanf("%d",&duzina);
-
-	sirina = sirina *2 +3;
-	duzina = duzina * 2+3;
-	if(sirina < 7 || duzina < 7) {
-      printf("dimenizije moraju biti vece od 7\n");
-      exit(EXIT_FAILURE);
-   }	
-
-    if(argc == 2 && argv[1][0] != 's') {
-      printf("error: invalid argument\n");
-      exit(EXIT_FAILURE);
-   }
-
-   lav = (char*)malloc(sirina * duzina * sizeof(char));
-   if(lav == NULL){
-   		printf("Nema dovoljno memorije\n");
-   		exit(EXIT_FAILURE);
-   }
-
-   printf("\n");
-   if(argc == 2){
-   		res = 1;
-
-   }
-     glutMainLoop();
-  
-   free(lav);
- 
-   exit(EXIT_SUCCESS);
-}
-
-void on_display(void){
-
-	glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
-
-	glMatrixMode(GL_MODELVIEW);
-	glLoadIdentity();
-	gluLookAt(1,4,20,0,0,0,0,1,0);
-
-   generisanje(lav,sirina,duzina);
-   prikaz(lav,sirina,duzina);
-
-
-   glutSwapBuffers();
 
 }
