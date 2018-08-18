@@ -5,11 +5,15 @@
 #include <time.h>
 
 static int window_width, window_height;
+static float move_up,move_side;
+static int timer_active;
+
 
 static void initialize(void);
 
 static void on_keyboard(unsigned char key,int x,int y);
 static void on_display(void);
+static void on_timer(int value);
 static void on_reshape(int width,int window_height);
 int sirina,duzina;
 char *lav;
@@ -32,11 +36,15 @@ int main(int argc,char **argv)
 	glutReshapeFunc(on_reshape);
 	glutDisplayFunc(on_display);
 
-	initialize();
-	
 	duzina = 17;
 	sirina=17;
+	move_up=0;
+	move_side=0;
+	timer_active=0;
 	
+	initialize();
+	
+
 	
 	lav = (char*)malloc(sirina*duzina *sizeof(char));
 	if(lav == NULL){
@@ -56,9 +64,11 @@ int main(int argc,char **argv)
 static void initialize(void)
 {
 	glClearColor(0,0,0,1);
+	glEnable(GL_DEPTH_TEST);
 	
 	glLineWidth(7);
 	glPointSize(2);
+
 
 
 }
@@ -74,9 +84,43 @@ static void on_keyboard(unsigned char key,int x,int y)
 			resenje(lav,sirina,duzina);
 			prikaz(lav,sirina,duzina);
 			break;
+		case 'g':
+			if(!timer_active){
+				glutTimerFunc(50,on_timer,0);
+				timer_active = 1;
+			}
+			break;
 	}
 	glutPostRedisplay();
 }
+
+static void on_timer(int value)
+{
+	if(value != 0)
+		return;
+
+	for(int i = 0;i<sirina;i++)
+		for(int j=0;j<duzina;j++)
+		{	
+			if(lav[i*sirina+j]==2){
+				move_up=i*0.1;
+				move_side=j*0.1;
+				
+			}
+				
+
+			
+		
+		}
+
+		glutPostRedisplay();
+
+		if(timer_active)
+				glutTimerFunc(50,on_timer,0);
+				
+	
+}
+
 static void on_reshape(int width,int height)
 {
 	window_width=width;
@@ -85,7 +129,7 @@ static void on_reshape(int width,int height)
 	
 	glMatrixMode(GL_PROJECTION);
 	glLoadIdentity();
-	gluPerspective(40,window_width/(float)window_height,1,120);
+	gluPerspective(40,window_width/(float)window_height,1,1500);
 }
 
 static void on_display(void)
@@ -130,10 +174,14 @@ static void on_display(void)
 			}	
 	}
 	glEnd();
-	
-	
 
+	glPushMatrix();
+        glTranslatef(move_up,0,move_side);
+        glColor3f(0, 0, 1);
+        glutWireSphere(0.1, 10, 10);
+    glPopMatrix();
 
+	
 
 
 
